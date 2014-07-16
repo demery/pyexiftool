@@ -169,9 +169,13 @@ class ExifTool(object):
             warnings.warn("ExifTool already running; doing nothing.")
             return
         with open(os.devnull, "w") as devnull:
+            # Put the kibosh on -common_args; these -- apparently -- are hobbling
+            # the call execute call when using '-json=/path/to/md.json' to write
+            # metadata.
+            # [self.executable, "-stay_open", "True",  "-@", "-",
+            #  "-common_args", "-G", "-n"],
             self._process = subprocess.Popen(
-                [self.executable, "-stay_open", "True",  "-@", "-",
-                 "-common_args", "-G", "-n"],
+                [self.executable, "-stay_open", "True",  "-@", "-"],
                 stdin=subprocess.PIPE, stdout=subprocess.PIPE,
                 stderr=devnull)
         self.running = True
@@ -251,6 +255,7 @@ class ExifTool(object):
         as Unicode strings in Python 3.x.
         """
         params = map(fsencode, params)
+        params = self._prepend_common_args(params)
         return json.loads(self.execute(b"-j", *params).decode("utf-8"))
 
     def get_metadata_batch(self, filenames):
@@ -325,3 +330,6 @@ class ExifTool(object):
         ``None`` if this tag was not found in the file.
         """
         return self.get_tag_batch(tag, [filename])[0]
+
+    def _prepend_common_args(self,params):
+        return [ '-G' , '-n' ] + params
