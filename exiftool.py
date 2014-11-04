@@ -224,7 +224,10 @@ class ExifTool(object):
         """
         if not self.running:
             raise ValueError("ExifTool instance not running.")
-        self._process.stdin.write(b"\n".join(params + (b"-execute\n",)))
+        # DE: 2014-11-04; make unicode strings work
+        params = map(fsencode, params)
+        # self._process.stdin.write(b"\n".join(params + (b"-execute\n",)))
+        self._process.stdin.write(b"\n".join(params + [ b"-execute\n" ]))
         self._process.stdin.flush()
         output = b""
         fd = self._process.stdout.fileno()
